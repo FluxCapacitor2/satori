@@ -114,6 +114,9 @@ function parseSvgImageSize(src: string, data: string) {
   return imageSize
 }
 
+import { disableFS, imageSize as probeImageSize } from 'image-size'
+disableFS(true) // `image-size` should only be used on in-memory images
+
 function arrayBufferToDataUri(data: ArrayBuffer) {
   let imageSize: [number, number]
 
@@ -130,6 +133,13 @@ function arrayBufferToDataUri(data: ArrayBuffer) {
     case JPEG:
       imageSize = parseJPEG(data)
       break
+    default: {
+      // Handle other image types using the `image-size` library
+      // This throws an exception if the file type is unknown
+      const { width, height } = probeImageSize(new Uint8Array(data))
+      imageSize = [width, height]
+      break
+    }
   }
 
   if (!ALLOWED_IMAGE_TYPES.includes(imageType)) {
@@ -209,6 +219,13 @@ export async function resolveImageData(
         case JPEG:
           imageSize = parseJPEG(data)
           break
+        default: {
+          // Handle other image types using the `image-size` library
+          // This throws an exception if the file type is unknown
+          const { width, height } = probeImageSize(new Uint8Array(data))
+          imageSize = [width, height]
+          break
+        }
       }
       cache.set(src, [src, ...imageSize])
       return [src, ...imageSize]
